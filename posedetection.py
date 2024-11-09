@@ -1,6 +1,7 @@
 import cv2
 import mediapipe as mp
 import numpy as np
+import math
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
@@ -12,28 +13,16 @@ def calculate_angle(landmark_1, landmark_2):
     x1, y1, z1 = landmark_1.x, landmark_1.y, landmark_1.z
     x2, y2, z2 = landmark_2.x, landmark_2.y, landmark_2.z
     
-    # İki nokta arasındaki vektörleri oluşturuyoruz
-    vector_1 = np.array([x1, y1, z1])
-    vector_2 = np.array([x2, y2, z2])
+    slope = (y2 - y1) / (x2 - x1)
     
-    # Vektörlerin iç çarpımını hesaplıyoruz
-    dot_product = np.dot(vector_1, vector_2)
+    # Açıyı radyan cinsinden hesapla
+    angle_radians = math.atan(slope)
     
-    # Her bir vektörün büyüklüğünü (magnitude) hesaplıyoruz
-    mag_1 = np.linalg.norm(vector_1)
-    mag_2 = np.linalg.norm(vector_2)
+    # Açıyı dereceye çevir
+    angle_degrees = math.degrees(angle_radians)
     
-    # Kosinüs açısını hesaplıyoruz
-    cos_angle = dot_product / (mag_1 * mag_2)
+    return angle_degrees
     
-    # Kosinüs değeri [-1, 1] aralığında olmalı, hatalardan kaçınmak için bunu sınırlıyoruz
-    cos_angle = np.clip(cos_angle, -1.0, 1.0)
-    
-    # Açıyı radyan cinsinden hesaplayıp dereceye çeviriyoruz
-    angle = np.arccos(cos_angle)
-    angle = np.degrees(angle)
-    
-    return angle
 
 # For static images:
 IMAGE_FILES = []
