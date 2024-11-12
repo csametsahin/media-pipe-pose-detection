@@ -1,14 +1,20 @@
+# video_analysis_app.py
+
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
-import cv2
 from PIL import Image, ImageTk
 import threading
+import cv2
+from pose_detection import PoseDetector
 
 class VideoAnalysisApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Video Analysis App")
         self.root.geometry("800x600")
+
+        # Pose detector instance
+        self.pose_detector = PoseDetector()
 
         # Set up notebook (tab control)
         self.notebook = ttk.Notebook(root)
@@ -70,22 +76,11 @@ class VideoAnalysisApp:
         if self.video_running and self.cap.isOpened():
             ret, frame = self.cap.read()
             if ret:
-                # Get the original frame dimensions
-                frame_height, frame_width = frame.shape[:2]
-
-                # Calculate the scale factor to fit within max dimensions
-                scale_w = self.max_video_width / frame_width
-                scale_h = self.max_video_height / frame_height
-                scale = min(scale_w, scale_h, 1.0)  # Limit scaling to avoid enlarging small videos
-
-                # Resize frame according to calculated scale
-                new_width = int(frame_width * scale)
-                new_height = int(frame_height * scale)
-                frame = cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_AREA)
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
+                # Resize frame for display if needed
+                frame = self.resize_frame(frame)
+                
                 # Convert to ImageTk format
-                img = Image.fromarray(frame)
+                img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
                 imgtk = ImageTk.PhotoImage(image=img)
                 self.video_label.imgtk = imgtk
                 self.video_label.configure(image=imgtk)
@@ -96,21 +91,29 @@ class VideoAnalysisApp:
                 self.video_running = False
                 self.cap.release()
 
+    def resize_frame(self, frame):
+        # Resize frame according to max display dimensions
+        height, width = frame.shape[:2]
+        scale = min(self.max_video_width / width, self.max_video_height / height, 1.0)
+        return cv2.resize(frame, (int(width * scale), int(height * scale)), interpolation=cv2.INTER_AREA)
+
     def start_analysis(self):
         if self.video_path:
-            # Simulate analysis in a separate thread to avoid freezing the UI
+            # Perform pose detection in a separate thread to avoid freezing the UI
             analysis_thread = threading.Thread(target=self.perform_analysis)
             analysis_thread.start()
         else:
             messagebox.showwarning("No Video", "Please upload a video to analyze.")
 
     def perform_analysis(self):
-        # Simulated video analysis process
-        messagebox.showinfo("Analysis", "Video analysis in progress...")
-        
-        # Example: Updating report table with dummy data
-        for i in range(5):
-            self.report_table.insert("", "end", values=(f"Report {i+1}", f"Result {i+1}", "Details"))
+        output_path = filedialog.asksaveasfilename(title="Save Output Video", defaultextension=".mp4",
+                                                   filetypes=(("MP4 files", "*.mp4"), ("All files", "*.*")))
+        if output_path:
+            # Run pose detection and save output video
+            self.pose_detector.process_video(self.video_path, output_path)
+            messagebox.showinfo("Analysis Complete", f"Analysis complete. Output saved to: {output_path}")
+        else:
+            messagebox.showinfo("Analysis Canceled", "Output video was not saved.")
 
     def setup_report_page(self):
         # Table to display analysis reports
