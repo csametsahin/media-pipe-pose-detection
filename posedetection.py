@@ -8,21 +8,26 @@ mp_pose = mp.solutions.pose
 
 
 # Açı hesaplama fonksiyonu (iki nokta arasındaki açı)
-def calculate_angle(landmark_1, landmark_2):
+def calculate_angle(landmark_1, landmark_2, degrees=True):
     # landmark_1 ve landmark_2'nin x, y, z koordinatlarını alıyoruz
     x1, y1, z1 = landmark_1.x, landmark_1.y, landmark_1.z
     x2, y2, z2 = landmark_2.x, landmark_2.y, landmark_2.z
     
-    slope = (y2 - y1) / (x2 - x1)
+    vector1 = np.array([x1, y1, z1])
+    vector2 = np.array([x2, y2, z2])
     
-    # Açıyı radyan cinsinden hesapla
-    angle_radians = math.atan(slope)
+    dot_product = np.dot(vector1, vector2)
+    magnitude_v1 = np.linalg.norm(vector1)
+    magnitude_v2 = np.linalg.norm(vector2)
     
-    # Açıyı dereceye çevir
-    angle_degrees = math.degrees(angle_radians)
+    # Calculate the angle in radians
+    angle_rad = np.arccos(dot_product / (magnitude_v1 * magnitude_v2))
     
-    return angle_degrees
-    
+    # Optionally, convert the angle to degrees
+    if degrees:
+        return np.degrees(angle_rad)
+    return angle_rad
+        
 
 # For static images:
 IMAGE_FILES = []
